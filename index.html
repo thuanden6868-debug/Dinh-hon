@@ -284,7 +284,11 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">"
 const photo = (src, label) => src ? `<img class="ph" src="${esc(src)}" alt="${esc(label)}" loading="lazy">` : `<div class="ph-empty">${esc(label)}</div>`;
 
 let guest = CONFIG.defaultGuest;
-try { const n = new URLSearchParams(location.search).get("name"); if (n && n.trim()) guest = n.trim().slice(0, 60); } catch(e) {}
+/* tên khách: đọc "name=" ở bất kỳ đâu trong link (kể cả sau dấu #) */
+try {
+  const m = location.href.match(/[?&#]name=([^&#]*)/i);
+  if (m) { let n = m[1].replace(/\+/g, " "); try { n = decodeURIComponent(n); } catch(e) {} n = n.trim(); if (n) guest = n.slice(0, 60); }
+} catch(e) {}
 /* loại khách: tự nhận ra từ tên ("Gia đình ...", "Anh chị ...") để đổi cách xưng hô */
 const kindOf = name => { const l = name.toLocaleLowerCase("vi").trim();
   if (/^(gia đình|cả nhà|đại gia đình)/.test(l)) return "gd";
@@ -412,7 +416,7 @@ cover.addEventListener("click", openEnv);
 cover.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openEnv(); } });
 
 /* ===== công cụ tạo link (#taolink) ===== */
-const toolOn = () => location.hash === "#taolink";
+const toolOn = () => /^#taolink\b/i.test(location.hash) && !/name=/i.test(location.hash);
 const setTool = () => { document.body.classList.toggle("tool-on", toolOn()); if (toolOn()) document.body.style.overflow = ""; else if (!cover.classList.contains("open")) document.body.style.overflow = "hidden"; };
 window.addEventListener("hashchange", setTool);
 try { if (/^https?:$/.test(location.protocol) && !/claude|usercontent|localhost/.test(location.hostname)) $("gBase").value = location.origin + location.pathname; } catch(e) {}
